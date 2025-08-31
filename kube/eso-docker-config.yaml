@@ -1,0 +1,26 @@
+---
+# Creates a kube secret called target.name
+# that is filled with dataFrom.extract.key
+# It uses spec.secretStoreRef.name to save
+# the key to the kube secret.
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: docker-config
+  namespace: verificat
+spec:
+  refreshInterval: 1m
+  secretStoreRef:
+    name: eso-store
+    kind: SecretStore
+  target:
+    template:
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: "{{ .config | toString }}"
+    name: docker-config
+    creationPolicy: Owner
+  data:
+    - secretKey: config
+      remoteRef:
+        key: ghcrRO

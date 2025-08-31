@@ -1,0 +1,16 @@
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: raw
+spec:
+  refreshInterval: 1m
+  secretStoreRef:
+    name: eso-store
+    kind: SecretStore
+  target:
+    name: raw
+    creationPolicy: Owner
+  dataFrom:
+  - extract:
+      key: "wm/devex/ghcrRO"

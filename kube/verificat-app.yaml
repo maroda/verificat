@@ -1,0 +1,78 @@
+---
+#
+# Deployment
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: verificat
+  namespace: verificat
+  labels:
+    app: verificat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: verificat
+  template:
+    metadata:
+      labels:
+        app: verificat
+        version: 0.0.1
+    spec:
+      imagePullSecrets:
+      - name: docker-pullimage
+      containers:
+      - name: verificat
+        image: ghcr.io/maroda/verificat:0.0.1
+        ports:
+          - containerPort: 4330
+        env:
+        - name: BACKSTAGE
+          value: "https://backstage.rainbowq.co"
+        - name: GH_TOKEN
+          value: <REPLACE_ME_WITH_PAT_IN_BASE64>
+        - name: PORT
+          value: "4330"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 4330
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 4330
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "125m"
+          limits:
+            memory: "64Mi"
+            cpu: "250m"
+---
+#
+# Service
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: verificat
+  namespace: verificat
+  labels:
+    app: verificat
+    service: verificat
+spec:
+  type: LoadBalancer
+  selector:
+    app: verificat
+  ports:
+  - protocol: TCP
+    name: http
+    port: 80
+    targetPort: 4330
