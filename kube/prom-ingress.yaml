@@ -1,23 +1,19 @@
----
-#
-# Ingress
-#
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: verificat
-  namespace: verificat
+  name: obvy-ingress
+  namespace: obvy
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
-    - host: Host(`verificat.k8s.orb.local`) && PathPrefix(`/`)
+    - host: prometheus.rainbowq.net
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: verificat
+                name: prometheus
                 port:
                   name: web

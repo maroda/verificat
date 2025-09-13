@@ -12,6 +12,7 @@ type Almanac []WMService
 // NewAlmanac will take an io.Reader like /database/ and decode the result.
 func NewAlmanac(rdr io.Reader) ([]WMService, error) {
 	var almanac []WMService
+	// Decode the JSON io.Reader and put it into slices of almanac
 	err := json.NewDecoder(rdr).Decode(&almanac)
 	if err != nil {
 		err = fmt.Errorf("problem parsing almanac, %v", err)

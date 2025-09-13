@@ -30,10 +30,10 @@ spec:
         env:
         - name: BACKSTAGE
           value: "https://backstage.rainbowq.co"
+        - name: GH_TOKEN
+          value: <REPLACE_ME_WITH_PAT_IN_BASE64>
         - name: PORT
           value: "4330"
-        #        - name: GH_TOKEN
-        #          value: <REPLACE_ME_WITH_PAT_IN_BASE64>
         livenessProbe:
           httpGet:
             path: /healthz
