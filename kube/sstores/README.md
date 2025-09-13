@@ -68,7 +68,7 @@ Due to the way we use profiles in conjunction with SSO, the easiest setup for lo
 
 ```
 [profile localstack]
-role_arn = arn:aws:iam::197533337274:role/devops
+role_arn = arn:aws:iam::121212121212:role/devops
 source_profile = default
 endpoint_url = http://localhost:4566
 ```
@@ -79,7 +79,7 @@ A few more things to make sure it's working correctly:
 2. Authenticate to AWS: `aws sso login`
 3. There is an oddity with LocalStack and our SSO, usually this extra step must be done:
    1. Confirm you have test account access: `aws --profile test sts get-caller-identity`
-   2. You should see an ARN like `arn:aws:sts::197533337274:assumed-role/devops/botocore-session-1740684713`
+   2. You should see an ARN like `arn:aws:sts::121212121212:assumed-role/devops/botocore-session-234789077`
    3. Do something with the test account, an easy one is: `aws --profile test s3 ls`
 4. Now confirm `aws_cli` is working with LocalStack:
    1. `aws --profile localstack sts get-caller-identity`
@@ -104,7 +104,7 @@ A few more things to make sure it's working correctly:
 
 Create the AWS SM secret to be sync'd
 
-1. Encode the full JSON used for `imagePullSecrets`: `echo '{ "auths": { "ghcr.io": { "username": "DieselDevEx", "password": "ghp_<token>" } } }' | base64`
+1. Encode the full JSON used for `imagePullSecrets`: `echo '{ "auths": { "ghcr.io": { "username": "maroda", "password": "ghp_<token>" } } }' | base64`
 2. `aws --profile localstack secretsmanager create-secret --name "k8s/application/github/ghcr-pullimage" --description "Base64 encoded docker imagePullSecret JSON for ReadOnly GitHub Package Access" --secret-string "<base64-encoded-json>"`
 
 ##### Install External Secret Operator (ESO)
