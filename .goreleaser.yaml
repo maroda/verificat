@@ -26,10 +26,10 @@ builds:
 dockers:
   - id: verificat
   - image_templates:
-      - "maroda/verificat:{{ .Tag }}"
-      - "maroda/verificat:v{{ .Major }}"
-      - "maroda/verificat:v{{ .Major }}.{{ .Minor }}"
-      - "maroda/verificat:latest"
+      - "ghcr.io/maroda/verificat:{{ .Tag }}"
+      - "ghcr.io/maroda/verificat:v{{ .Major }}"
+      - "ghcr.io/maroda/verificat:v{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/maroda/verificat:latest"
     build_flag_templates:
       - "--pull"
       - "--label=org.opencontainers.image.created={{.Date}}"
