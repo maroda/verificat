@@ -15,10 +15,12 @@ import (
 
 // Currently CODEOWNERS is the only thing we check in GitHub
 // so this path is very specific.
+// ...
+// https://raw.githubusercontent.com/maroda/verificat/main/.github/CODEOWNERS
 const (
-	ghDomain   = "https://api.github.com"
-	ghPreURI   = "/repos/maroda/"
-	ghGetPATH  = "/contents/.github/CODEOWNERS"
+	ghDomain   = "https://raw.githubusercontent.com"
+	ghPreURI   = "/maroda/"
+	ghGetPATH  = "/main/.github/CODEOWNERS"
 	webTimeout = 10 * time.Second
 	prefixGH   = "* @maroda/"
 	suffixGH   = "\n"
@@ -113,7 +115,13 @@ func (s *SvcTestDB) TestItem(svc string) *TestReturn {
 	}
 
 	// This will be included in the API return value
-	return &TestReturn{Present: present, Owner: s.Owner, Reality: reality, Works: works, Score: s.Score}
+	return &TestReturn{
+		Present: present,
+		Owner:   s.Owner,
+		Reality: reality,
+		Works:   works,
+		Score:   s.Score,
+	}
 }
 
 // ReadinessDisplay takes the data and runs queries for processing and presentation.
