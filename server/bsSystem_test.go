@@ -1,18 +1,13 @@
 package verificat
 
-import (
-	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/tdabasinskas/go-backstage/v2/backstage"
-)
-
 /*
 Integration Testing for Backstage
-*/
 const (
 	backstageURL = "https://backstage.rainbowq.co"
 )
+*/
+
+/* DISABLED UNTIL BACKSTAGE WORKS
 
 // TODO: A unit test version of this could use a fake BSSE object.
 //
@@ -71,3 +66,33 @@ func TestReadSystemBS(t *testing.T) {
 		}
 	})
 }
+
+// Integration: Backstage POST endpoint
+func TestStoreIDs(t *testing.T) {
+	store := StubServiceStore{
+		map[string]int{},
+		nil, nil,
+	}
+	server := NewVerificationServ(&store)
+
+	// Use a real service - like /verificat/ - to check readiness with the Backstage API
+	t.Run("Integration: Backstage returns 200 on POST", func(t *testing.T) {
+		service := "verificat"
+		request := newPostIDReq(service)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assertStatus(t, response.Code, http.StatusAccepted)
+
+		if len(store.verifyCalls) != 1 {
+			t.Errorf("got %d calls to TriggerID want %d", len(store.verifyCalls), 1)
+		}
+
+		if store.verifyCalls[0] != service {
+			t.Errorf("did not store correct service got %q want %q", store.verifyCalls[0], service)
+		}
+	})
+}
+
+*/

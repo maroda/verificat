@@ -13,10 +13,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// Currently CODEOWNERS is the only thing we check in GitHub
+// so this path is very specific.
 const (
+	ghDomain   = "https://api.github.com"
+	ghPreURI   = "/repos/maroda/"
+	ghGetPATH  = "/contents/.github/CODEOWNERS"
 	webTimeout = 10 * time.Second
 	prefixGH   = "* @maroda/"
 	suffixGH   = "\n"
+	junkGH     = "* @"
 )
 
 type SvcTest interface {
@@ -43,14 +49,6 @@ type TestReturn struct {
 	Works   bool
 	Score   int
 }
-
-// Currently CODEOWNERS is the only thing we check in GitHub
-// so this path is very specific. TODO: /ghGetPATH/ can be dynamic
-const (
-	ghDomain  = "https://api.github.com"
-	ghPreURI  = "/repos/maroda/"
-	ghGetPATH = "/contents/.github/CODEOWNERS"
-)
 
 // urlCat is variadic, concatenating any set of strings into a URL.
 // It can be used to embed a dynamic string alongside static parts of a URI.
@@ -85,7 +83,8 @@ func (s *SvcTestDB) TestItem(svc string) *TestReturn {
 	}
 
 	// Strip off the CODEOWNERS formatting
-	reality := strings.TrimPrefix(strings.TrimSuffix(answer[0], suffixGH), prefixGH)
+	subreal := strings.TrimPrefix(strings.TrimSuffix(answer[0], suffixGH), prefixGH)
+	reality := strings.TrimPrefix(subreal, junkGH)
 
 	// Check the Owner for any WMService in Backstage
 	if s.Owner == "" {

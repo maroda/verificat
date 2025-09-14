@@ -169,6 +169,11 @@ func (p *VerificationServ) runVerification(w http.ResponseWriter, service string
 
 	// Read the SVC and get the "owner" string back
 	// We don't need a return, it updates the struct
+	/*
+
+		ReadinessRead currently circumnavigates the backstage code and returns a static value.
+
+	*/
 	_, err = ReadinessRead(svcconf)
 	if err != nil {
 		slog.Error("ReadinessRead Failed", slog.Any("Error", err))
