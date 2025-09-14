@@ -55,7 +55,7 @@ func TestReadinessDisplay(t *testing.T) {
 // getGitHub checks for the token in the GH_TOKEN EnvVar
 func TestGetGitHub(t *testing.T) {
 	t.Run("Integration: GitHub auth is working", func(t *testing.T) {
-		svc := "admin"
+		svc := "verificat"
 		var got string
 		want := "* @maroda\n"
 		url := ghDomain + ghPreURI + svc + ghGetPATH

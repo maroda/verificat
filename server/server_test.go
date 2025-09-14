@@ -64,16 +64,16 @@ func TestGETServices(t *testing.T) {
 	// Make a new stub "store" to use in testing
 	store := StubServiceStore{
 		map[string]int{
-			"admin":  20,
-			"Craque": 10,
+			"verificat": 20,
+			"Craque":    10,
 		},
 		nil, nil,
 	}
 	// A new struct with an internal reference to the interface
 	server := NewVerificationServ(&store)
 
-	t.Run("returns admin's LastID", func(t *testing.T) {
-		service := "admin"
+	t.Run("returns verificat's LastID", func(t *testing.T) {
+		service := "verificat"
 		request := newGetTriggerIDReq(service)
 		// Use ResponseRecorder for a canned response
 		response := httptest.NewRecorder()
@@ -159,9 +159,9 @@ func TestStoreIDs(t *testing.T) {
 	}
 	server := NewVerificationServ(&store)
 
-	// Use a real service - like /admin/ - to check readiness with the Backstage API
+	// Use a real service - like /verificat/ - to check readiness with the Backstage API
 	t.Run("Integration: Backstage returns 200 on POST", func(t *testing.T) {
-		service := "admin"
+		service := "verificat"
 		request := newPostIDReq(service)
 		response := httptest.NewRecorder()
 
@@ -193,7 +193,7 @@ func TestRecordingIDsAndRetrievingThem(t *testing.T) {
 	}
 
 	server := NewVerificationServ(store)
-	service := "admin"
+	service := "verificat"
 
 	server.ServeHTTP(httptest.NewRecorder(), newPostIDReq(service))
 	server.ServeHTTP(httptest.NewRecorder(), newPostIDReq(service))

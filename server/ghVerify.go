@@ -130,7 +130,7 @@ func ReadinessDisplay(i SvcTest, service string, w io.Writer) error {
 	}
 
 	// Print the JSON bytestring and return
-	_, err = fmt.Fprintf(w, string(returnOut))
+	_, err = fmt.Fprintf(w, "%s", string(returnOut))
 	if err != nil {
 		slog.Error("Failed to print JSON to Writer", slog.Any("Error", err))
 	}
