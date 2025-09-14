@@ -18,13 +18,13 @@ spec:
     metadata:
       labels:
         app: verificat
-        version: 0.0.1
+        version: v0.0.2
     spec:
       imagePullSecrets:
-      - name: docker-pullimage
+      - name: regkey
       containers:
       - name: verificat
-        image: ghcr.io/maroda/verificat:0.0.1
+        image: ghcr.io/maroda/verificat:v0.0.2
         ports:
           - containerPort: 4330
         env:
@@ -32,8 +32,8 @@ spec:
           value: "https://backstage.rainbowq.co"
         - name: PORT
           value: "4330"
-        #        - name: GH_TOKEN
-        #          value: <REPLACE_ME_WITH_PAT_IN_BASE64>
+        - name: GH_TOKEN
+          value: <REPLACE_WITH_64BASE_OF_GITHUB_PAT>
         livenessProbe:
           httpGet:
             path: /healthz
