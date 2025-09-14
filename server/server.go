@@ -6,6 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
+
+	vo "github.com/maroda/verificat/obvy"
 )
 
 const (
@@ -33,22 +36,27 @@ type ServiceStore interface {
 	GetAlmanac() Almanac              // A collection of all services and their scores
 }
 
-// VerificationServ needs to reference the interface to use it
+// VerificationServ is the main brain,
+// serving up http and collecting stats
+// connected to a specific data store
 type VerificationServ struct {
-	store ServiceStore
+	stats *vo.StatsInternal // Prometheus metrics
+	store ServiceStore      // The Almanac service database
 	http.Handler
 }
 
-// NewVerificationServ controls the launch of an HTTP service using routed endpoints.
+// NewVerificationServ initiates the HTTP service and internal stats with prometheus
 func NewVerificationServ(store ServiceStore) *VerificationServ {
 	v := new(VerificationServ)
 	v.store = store
+	v.stats = vo.NewStatsInternal()
 
 	// This will be assigned to the http.Handler in PlayerServer
 	// so that the routing is done once at the start, not on every request.
 	router := http.NewServeMux()
 
 	// Set up each server endpoint and its associated handler function
+	router.Handle("/metrics", v.stats.Handler())
 	router.Handle("/almanac", http.HandlerFunc(v.almanacHandler))
 	router.Handle("/healthz", http.HandlerFunc(v.healthzHandler))
 	router.Handle("/v0/almanac", http.HandlerFunc(v.almanacHandler))
@@ -64,24 +72,32 @@ func NewVerificationServ(store ServiceStore) *VerificationServ {
 // Very simple endpoint for use with readiness and liveness probes
 // If the app isn't answering 'ok' at this endpoint, all probes fail.
 // TODO: Include a 'liveness' probe that successfully connects to the database
-func (p *VerificationServ) healthzHandler(w http.ResponseWriter, r *http.Request) {
+func (v *VerificationServ) healthzHandler(w http.ResponseWriter, r *http.Request) {
 	// No /w.WriteHeader(http.StatusAccepted)/ here
 	// 200 is the default for w.Write
 	w.Header().Set("content-type", htmlContentType)
 	w.Write([]byte(`ok`))
+
+	// Prometheus
+	methodString := r.Method + ":" + r.RequestURI
+	v.stats.RecWWW("200", methodString)
 }
 
 // UI homepage handler
 // Render the current full Almanac to the home page
-func (p *VerificationServ) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (v *VerificationServ) homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", htmlContentType)
+
+	// Prometheus
+	methodString := r.Method + ":" + r.RequestURI
+	v.stats.RecWWW("200", methodString)
 
 	// Configure draw output margins and offsets
 	sc := &SVGCfg{Gutter: 3, TxtOff: 8, Spacer: 14}
 
 	// Create a full dataset to work with
 	// This is where BuildSVG needs to operate first
-	currAlmanac := p.store.GetAlmanac()
+	currAlmanac := v.store.GetAlmanac()
 	aWeb := &AlmanacWeb{
 		Title:     "Verificat | Production Readiness Scores",
 		Content:   BuildSVG(&currAlmanac, sc),
@@ -102,9 +118,14 @@ func (p *VerificationServ) homeHandler(w http.ResponseWriter, r *http.Request) {
 
 // Fetch full almanac handler
 // Return the full JSON almanac of WMServices and their verification scores.
-func (p *VerificationServ) almanacHandler(w http.ResponseWriter, r *http.Request) {
+func (v *VerificationServ) almanacHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", jsonContentType)
-	json.NewEncoder(w).Encode(p.store.GetAlmanac())
+	json.NewEncoder(w).Encode(v.store.GetAlmanac())
+
+	// Prometheus
+	methodString := r.Method + ":" + r.RequestURI
+	v.stats.RecWWW("200", methodString)
+
 	slog.Info("Almanac API",
 		slog.String("Method", r.Method),
 		slog.String("Path", r.URL.Path),
@@ -115,7 +136,7 @@ func (p *VerificationServ) almanacHandler(w http.ResponseWriter, r *http.Request
 
 // API for service tests handler
 // Version 0 (/v0/<SERVICE>)
-func (p *VerificationServ) servicesHandler(w http.ResponseWriter, r *http.Request) {
+func (v *VerificationServ) servicesHandler(w http.ResponseWriter, r *http.Request) {
 	// extract this once here, then it's not necessary to pass http.Request
 	service := strings.TrimPrefix(r.URL.Path, "/v0/")
 
@@ -124,11 +145,16 @@ func (p *VerificationServ) servicesHandler(w http.ResponseWriter, r *http.Reques
 	switch r.Method {
 	case http.MethodPost:
 		// Kick off the test and display the results
-		p.runVerification(w, service)
+		v.runVerification(w, service)
 	case http.MethodGet:
 		// Get last session ID from the database.
-		p.showLastID(w, service)
+		v.showLastID(w, service)
 	}
+
+	// Prometheus
+	methodString := r.Method + ":" + r.RequestURI
+	v.stats.RecWWW("200", methodString)
+
 	slog.Info("Services API",
 		slog.String("Method", r.Method),
 		slog.String("Path", r.URL.Path),
@@ -138,9 +164,9 @@ func (p *VerificationServ) servicesHandler(w http.ResponseWriter, r *http.Reques
 }
 
 // showLastID will display the ID of the most recent verification run for this service.
-func (p *VerificationServ) showLastID(w http.ResponseWriter, service string) {
+func (v *VerificationServ) showLastID(w http.ResponseWriter, service string) {
 	// GetTriggerID is a method available through the interface
-	lastID := p.store.GetTriggerID(service)
+	lastID := v.store.GetTriggerID(service)
 
 	if lastID == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -151,7 +177,8 @@ func (p *VerificationServ) showLastID(w http.ResponseWriter, service string) {
 }
 
 // runVerification. Takes a passed configuration and launches testing.
-func (p *VerificationServ) runVerification(w http.ResponseWriter, service string) {
+func (v *VerificationServ) runVerification(w http.ResponseWriter, service string) {
+	start := time.Now()
 	w.WriteHeader(http.StatusAccepted)
 
 	var err error
@@ -193,6 +220,11 @@ func (p *VerificationServ) runVerification(w http.ResponseWriter, service string
 		}
 
 		// Initiate the TriggerID sequence that is used to set WMService.Score in the database.
-		p.store.TriggerID(service, stests.Score)
+		v.store.TriggerID(service, stests.Score)
 	}
+
+	elapsed := time.Since(start).Seconds()
+	methodString := "Readiness Read: " + service
+	v.stats.RecWWW("200", methodString)
+	v.stats.PollTimer.Observe(elapsed)
 }
