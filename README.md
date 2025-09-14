@@ -143,7 +143,7 @@ To add an entry to the database:
 1. These incorporate integration tests that require VPN access.
 2. The following environment variables are required:
 
-   - `GH_TOKEN` is a Personal Access Token (PAT) that has at least `repo, package:read` scope (e.g.: a **DieselDevEx** token should work)
+   - `GH_TOKEN` is a Personal Access Token (PAT) that has at least `repo, package:read` scope
    - `BACKSTAGE` is the Backstage API endpoint to use, for production that is: `"https://backstage.rainbowq.co"`
 3. It is recommended to keep these variables in an `.env` file local to this repo (or copyable if you need to reclone). The smoketest script uses this file, but `verificat` only reads ENV VARs.
 
