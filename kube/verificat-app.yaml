@@ -18,13 +18,13 @@ spec:
     metadata:
       labels:
         app: verificat
-        version: v0.0.2
+        version: v0.0.3
     spec:
       imagePullSecrets:
       - name: regkey
       containers:
       - name: verificat
-        image: ghcr.io/maroda/verificat:v0.0.2
+        image: ghcr.io/maroda/verificat:v0.0.3
         ports:
           - containerPort: 4330
         env:
