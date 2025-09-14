@@ -173,6 +173,7 @@ func MultiFetch(urls map[int]string) ([]string, error) {
 
 // getGitHub should take the url and a pointer to the results
 // then update the pointer and return only an error
+// TODO: Catch x509 TLS errors
 func getGitHub(currURL string) (string, error) {
 	// Grab GH_TOKEN from the environment
 	// if there's no EnvVar, log an error and go no further
