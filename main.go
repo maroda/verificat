@@ -1,19 +1,19 @@
 package main
 
 import (
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
 
+	vo "github.com/maroda/verificat/obvy"
 	verificat "github.com/maroda/verificat/server"
 )
 
 const (
 	dbFileName = "almanac.db.json"
 	app        = "verificat"
-	llvl       = slog.LevelDebug // TODO: this should be configurable
-	runPort    = "4330"          // TODO: this should be configurable
+	runPort    = "4330"
+	llvl       = slog.LevelInfo
 )
 
 func init() {
@@ -23,21 +23,31 @@ func init() {
 
 // Main connects a local JSON database to a running API service.
 func main() {
+	// Init OpenTelemetry here first
+	shutdown, err := vo.InitOTel()
+	if err != nil {
+		slog.Error("Error initializing OTel", slog.Any("error", err))
+	}
+	defer shutdown()
+
 	// Open JSON Database file
 	db, err := os.OpenFile(dbFileName, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		log.Fatalf("problem opening %s %v", dbFileName, err)
+		slog.Error("Error opening database file", slog.Any("error", err), slog.String("filename", dbFileName))
+		os.Exit(1)
 	}
 
 	// Connect File System Storage operations to JSON Database
 	store, err := verificat.NewFSStore(db)
 	if err != nil {
-		log.Fatalf("problem creating file system service store, %v ", err)
+		slog.Error("Error initializing FSStore", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	// A NewVerificationServ is configured with the database on local disk
 	server := verificat.NewVerificationServ(store)
 	if err := http.ListenAndServe(":"+runPort, server); err != nil {
-		slog.Error("Server Crash")
+		slog.Error("Could not start Verification Service", slog.Any("error", err))
+		os.Exit(1)
 	}
 }

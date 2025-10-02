@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	vo "github.com/maroda/verificat/obvy"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -40,8 +44,9 @@ type ServiceStore interface {
 // serving up http and collecting stats
 // connected to a specific data store
 type VerificationServ struct {
-	stats *vo.StatsInternal // Prometheus metrics
-	store ServiceStore      // The Almanac service database
+	stats  *vo.StatsInternal // Prometheus metrics
+	store  ServiceStore      // The Almanac service database
+	tracer trace.Tracer      // otel tracer
 	http.Handler
 }
 
@@ -50,6 +55,7 @@ func NewVerificationServ(store ServiceStore) *VerificationServ {
 	v := new(VerificationServ)
 	v.store = store
 	v.stats = vo.NewStatsInternal()
+	v.tracer = otel.Tracer("verification-serv")
 
 	// This will be assigned to the http.Handler in PlayerServer
 	// so that the routing is done once at the start, not on every request.
@@ -86,11 +92,20 @@ func (v *VerificationServ) healthzHandler(w http.ResponseWriter, r *http.Request
 // UI homepage handler
 // Render the current full Almanac to the home page
 func (v *VerificationServ) homeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", htmlContentType)
+	// OpenTelemetry
+	ctx := r.Context()
+	user := os.Getuid()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.Int("user.id", user))
+	ctx, span = v.tracer.Start(ctx, "homeHandler")
+	defer span.End()
 
 	// Prometheus
 	methodString := r.Method + ":" + r.RequestURI
 	v.stats.RecWWW("200", methodString)
+
+	// Write response
+	w.Header().Set("content-type", htmlContentType)
 
 	// Configure draw output margins and offsets
 	sc := &SVGCfg{Gutter: 3, TxtOff: 8, Spacer: 14}
@@ -119,6 +134,15 @@ func (v *VerificationServ) homeHandler(w http.ResponseWriter, r *http.Request) {
 // Fetch full almanac handler
 // Return the full JSON almanac of WMServices and their verification scores.
 func (v *VerificationServ) almanacHandler(w http.ResponseWriter, r *http.Request) {
+	// OpenTelemetry
+	ctx := r.Context()
+	user := os.Getuid()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.Int("user.id", user))
+	ctx, span = v.tracer.Start(ctx, "almanacHandler")
+	defer span.End()
+
+	// Write response
 	w.Header().Set("content-type", jsonContentType)
 	json.NewEncoder(w).Encode(v.store.GetAlmanac())
 
@@ -137,6 +161,14 @@ func (v *VerificationServ) almanacHandler(w http.ResponseWriter, r *http.Request
 // API for service tests handler
 // Version 0 (/v0/<SERVICE>)
 func (v *VerificationServ) servicesHandler(w http.ResponseWriter, r *http.Request) {
+	// OpenTelemetry
+	ctx := r.Context()
+	user := os.Getuid()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.Int("user.id", user))
+	ctx, span = v.tracer.Start(ctx, "servicesHandler")
+	defer span.End()
+
 	// extract this once here, then it's not necessary to pass http.Request
 	service := strings.TrimPrefix(r.URL.Path, "/v0/")
 
