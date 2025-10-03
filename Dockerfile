@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine3.22
+FROM alpine:latest
 LABEL app=verificat
 LABEL org.opencontainers.image.source=https://github.com/maroda/verificat
 WORKDIR /
