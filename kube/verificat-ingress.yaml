@@ -19,4 +19,4 @@ spec:
               service:
                 name: verificat
                 port:
-                  name: http
+                  number: 4330
